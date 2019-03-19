@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .textArea {
+            width: 600px;
+            resize: none;
+        }
+
+        .footer {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            /* align-items: center; */
+            width: 600px;
+            height: 100px;
+            background: #dea1a1;
+            border: solid 1px #000;
+        }
+
+        .input {
+            /* align-self:  */
+            flex-grow: 1;
+            resize: none;
+        }
+
+        .show{
+            width: 600px;
+            height: 400px;
+            background: #dea1a1;
+            overflow:auto;
+        }
+
+        .message_container{
+            margin: 10px;
+        }
+
+        .message_name{
+            background: rgb(126, 146, 199);
+            color: aliceblue;
+            display: inline-block;
+            padding: 3px;
+            border-radius: 5px;
+        }
+
+        .message_content{
+            background: rgb(197, 255, 238);
+            color: rgb(56, 57, 58);
+            display: inline-block;
+            padding: 2px;
+            border-radius: 5px;
+            margin-left: 10px;
+            margin-top: 10px;
+            border: solid 5px #eee;
+        }
+
+        .speak{
+            color:aquamarine;
+        }
+
+        .online_speak{
+            display: inline-block;
+            padding: 2px;
+            border-radius: 5px;
+            margin-left: 10px;
+            margin-top: 10px;
+            color: #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div  id="textarea" class="show" contenteditable="true"></div>
+        <!-- <textarea id="textarea" class="textArea" rows="20"></textarea> -->
+        <div class="footer">
+            <textarea id="input" class="input"></textarea>
+            <button onclick="sendMessage()">WEBSOCKET提交</button>
+        </div>
+    </div>
+
+</body>
+<script>
+    //说话者字框颜色
+    let speak_colors = new Map();
+    let $textarea = $("#textarea");
+    let $input = $("#input");
+    let onOpen = function () {
+        // console.log("Socket opened.");
+        // socket.send("Hi, Server!");
+    }
+
+    let onClose = function () {
+        console.log("Socket closed.");
+    }
+
+    let onMessage = function (response) {
+        let { state, message, id } = JSON.parse(response.data);
+        let content = "";
+        if (state === "online") {
+            speak_colors.set(id,{prefix:Math.random});
+            content = `<div class="message_container"><div class="message_name">${id}</div><div class="online_speak">${message}</div></div>`;
+        }
+        else if (state === "cancel") {
+            content = `<div class="message_container"><div class="message_name">${id}</div><div class="online_speak">${message}</div></div>`;
+        }
+        else {
+            content =`<div class="message_container"><div class="message_name">${id} <span class="speak">发言</span></div><br/><div class="message_content">${message}</div></div>`;
+        }
+        $textarea.html(`${$textarea.html()}${content} <br/><br/>` );
+    }
+
+    let onError = function () {
+        console.log("We got an error.");
+    }
+
+    socket = new WebSocket("ws://127.0.0.1:8080/");
+    socket.onopen = onOpen;
+    socket.onclose = onClose;
+    socket.onerror = onError;
+    socket.onmessage = onMessage;
+
+    function sendMessage() {
+        socket.send($input.val()||"");
+    }
+</script>
+
+</html>
